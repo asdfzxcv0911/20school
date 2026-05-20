@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生教業務儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .filter-active { background-color: #1f2937 !important; color: white !important; border-color: #1f2937 !important; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-screen overflow-hidden flex flex-col md:flex-row">
+
+    <aside class="hidden md:flex flex-col w-64 bg-white shadow-lg z-10">
+        <div class="p-6 border-b border-gray-200">
+            <h1 class="text-xl font-bold text-indigo-600"><i class="fa-solid fa-shield-halved mr-2"></i>生教業務儀表板</h1>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="#" class="block px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg font-medium"><i class="fa-solid fa-calendar-day w-6"></i> 每日視角</a>
+            <a href="#" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"><i class="fa-solid fa-calendar-week w-6"></i> 每週視角</a>
+            <a href="#" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"><i class="fa-solid fa-calendar-days w-6"></i> 每月/年視角</a>
+            <a href="#" class="block px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium"><i class="fa-solid fa-key w-6"></i> 密碼備忘錄</a>
+        </nav>
+        <div class="p-4 border-t border-gray-200 space-y-2">
+            <button id="exportCsvBtnDesktop" class="w-full bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition flex justify-center items-center">
+                <i class="fa-solid fa-file-excel mr-2"></i>匯出 Excel
+            </button>
+            <button id="addBtnDesktop" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition">
+                <i class="fa-solid fa-plus mr-2"></i>新增重點事項
+            </button>
+        </div>
+    </aside>
+
+    <header class="md:hidden bg-white shadow-sm p-4 flex justify-between items-center z-10 relative">
+        <h1 class="text-lg font-bold text-indigo-600"><i class="fa-solid fa-shield-halved mr-2"></i>生教業務儀表板</h1>
+        <button id="exportCsvBtnMobile" class="text-green-600 hover:text-green-800 transition">
+            <i class="fa-solid fa-file-excel text-xl"></i>
+        </button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-8 pb-24 md:pb-8">
+        
+        <div class="flex space-x-2 mb-6 overflow-x-auto no-scrollbar pb-2" id="filterContainer">
+            <span class="filter-btn filter-active cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="全部">全部</span>
+            <span class="filter-btn cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="突發狀況">突發狀況</span>
+            <span class="filter-btn cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="研習">研習</span>
+            <span class="filter-btn cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="固定例行">固定例行</span>
+            <span class="filter-btn cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="重要公文">重要公文</span>
+            <span class="filter-btn cursor-pointer px-4 py-1.5 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-full text-sm font-medium whitespace-nowrap" data-category="年度新增">年度新增</span>
+        </div>
+
+        <div id="cardContainer" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            </div>
+    </main>
+
+    <button id="addBtnMobile" class="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-300 flex items-center justify-center text-2xl hover:bg-indigo-700 active:scale-95 transition z-20">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-3 z-20">
+        <a href="#" class="flex flex-col items-center text-indigo-600"><i class="fa-solid fa-list-check text-xl mb-1"></i><span class="text-[10px] font-medium">今日</span></a>
+        <a href="#" class="flex flex-col items-center text-gray-400"><i class="fa-solid fa-calendar-days text-xl mb-1"></i><span class="text-[10px] font-medium">行事曆</span></a>
+    </nav>
+
+    <div id="addModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50 px-4 transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col transform transition-all">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-indigo-50 shrink-0">
+                <h2 class="text-lg font-bold text-indigo-800"><i class="fa-solid fa-pen-to-square mr-2"></i>新增事項</h2>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 no-scrollbar">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">事項標題</label>
+                    <input type="text" id="inputTitle" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：處理學生衝突...">
+                </div>
+                <div class="flex space-x-4">
+                    <div class="w-1/2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">分類</label>
+                        <select id="categorySelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="突發狀況">突發狀況</option>
+                            <option value="固定例行">固定例行</option>
+                            <option value="研習">研習</option>
+                            <option value="重要公文">重要公文</option>
+                            <option value="年度新增">年度新增</option>
+                        </select>
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">日期</label>
+                        <input type="date" id="inputDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">內容與備註</label>
+                    <textarea id="inputNote" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="基本事件描述..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">附加照片/檔案 (暫不支援預覽)</label>
+                    <div class="flex items-center justify-center w-full">
+                        <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-2xl mb-2"></i>
+                                <p class="text-sm text-gray-500"><span class="font-semibold">點擊上傳</span></p>
+                            </div>
+                            <input type="file" class="hidden" accept="image/*" multiple />
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-medium text-gray-700">處理流程記錄</label>
+                        <button type="button" id="addStepBtn" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium"><i class="fa-solid fa-plus"></i> 新增步驟</button>
+                    </div>
+                    <div id="processStepsContainer" class="space-y-2">
+                        <div class="flex items-start space-x-2 step-item">
+                            <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2 py-1 rounded mt-1 step-number">1</span>
+                            <input type="text" class="step-input flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：通知家長...">
+                            <button type="button" class="text-gray-400 hover:text-red-500 mt-1 remove-step-btn" title="刪除此步驟"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 shrink-0">
+                <button id="cancelBtn" class="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition">取消</button>
+                <button id="saveBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow shadow-indigo-200 transition">儲存紀錄</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= 1. 資料庫 (LocalStorage) =================
+        let tasks = JSON.parse(localStorage.getItem('myTasks')) || [
+            {
+                id: 1,
+                title: "三年級走廊奔跑相撞通報",
+                category: "突發狀況",
+                date: "2026-05-20",
+                note: "已請護理師包紮，需聯絡雙方家長說明情況並記錄於校安系統。",
+                steps: ["帶學生至健康中心", "聯絡甲生家長", "聯絡乙生家長", "完成校安通報"]
+            }
+        ];
+
+        let currentFilter = "全部";
+
+        const categoryStyles = {
+            "突發狀況": { border: "border-red-500", bg: "bg-red-100", text: "text-red-700" },
+            "固定例行": { border: "border-green-500", bg: "bg-green-100", text: "text-green-700" },
+            "研習": { border: "border-blue-500", bg: "bg-blue-100", text: "text-blue-700" },
+            "重要公文": { border: "border-purple-500", bg: "bg-purple-100", text: "text-purple-700" },
+            "年度新增": { border: "border-yellow-500", bg: "bg-yellow-100", text: "text-yellow-700" }
+        };
+
+        const cardContainer = document.getElementById('cardContainer');
+
+        // ================= 2. 畫出卡片的函式 =================
+        function renderCards() {
+            cardContainer.innerHTML = '';
+            let filteredTasks = tasks;
+            if (currentFilter !== "全部") {
+                filteredTasks = tasks.filter(task => task.category === currentFilter);
+            }
+
+            if (filteredTasks.length === 0) {
+                cardContainer.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10">目前沒有「${currentFilter}」的紀錄</div>`;
+                return;
+            }
+
+            filteredTasks.forEach(task => {
+                const style = categoryStyles[task.category] || { border: "border-gray-500", bg: "bg-gray-100", text: "text-gray-700" };
+                
+                let stepsHTML = '';
+                if (task.steps && task.steps.length > 0 && task.steps[0] !== "") {
+                    stepsHTML = `<div class="mt-3 pt-3 border-t border-gray-100">
+                                    <p class="text-xs font-bold text-gray-500 mb-1">處理流程：</p>
+                                    <ul class="text-sm text-gray-600 list-decimal list-inside space-y-1">
+                                        ${task.steps.map(step => `<li>${step}</li>`).join('')}
+                                    </ul>
+                                 </div>`;
+                }
+
+                const cardHTML = `
+                    <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 ${style.border} relative group hover:shadow-md transition">
+                        <button onclick="deleteTask(${task.id})" class="absolute top-3 right-3 text-gray-300 hover:text-red-500 opacity-0 md:group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex justify-between items-start mb-2 pr-6">
+                            <span class="text-xs font-bold px-2 py-1 ${style.bg} ${style.text} rounded">${task.category}</span>
+                            <span class="text-xs text-gray-400">${task.date}</span>
+                        </div>
+                        <h3 class="font-bold text-lg text-gray-800 mb-1">${task.title}</h3>
+                        <p class="text-sm text-gray-600">${task.note}</p>
+                        ${stepsHTML}
+                        <button onclick="deleteTask(${task.id})" class="md:hidden mt-3 text-xs text-red-500 border border-red-200 px-2 py-1 rounded w-full">刪除此紀錄</button>
+                    </div>
+                `;
+                cardContainer.innerHTML += cardHTML;
+            });
+        }
+
+        // ================= 3. 處理「儲存紀錄」的邏輯 =================
+        const saveBtn = document.getElementById('saveBtn');
+
+        saveBtn.addEventListener('click', function() {
+            const title = document.getElementById('inputTitle').value;
+            const category = document.getElementById('categorySelect').value;
+            const date = document.getElementById('inputDate').value;
+            const note = document.getElementById('inputNote').value;
+            
+            const stepInputs = document.querySelectorAll('.step-input');
+            const stepsArray = Array.from(stepInputs).map(input => input.value).filter(val => val.trim() !== "");
+
+            if (!title) {
+                alert('請輸入事項標題！');
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                title: title,
+                category: category,
+                date: date || new Date().toISOString().split('T')[0],
+                note: note,
+                steps: stepsArray
+            };
+
+            tasks.unshift(newTask);
+            localStorage.setItem('myTasks', JSON.stringify(tasks));
+
+            if (currentFilter !== "全部" && currentFilter !== category) {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('filter-active'));
+                document.querySelector('[data-category="全部"]').classList.add('filter-active');
+                currentFilter = "全部";
+            }
+
+            renderCards();
+
+            document.getElementById('inputTitle').value = '';
+            document.getElementById('inputNote').value = '';
+            document.getElementById('inputDate').value = '';
+            document.getElementById('processStepsContainer').innerHTML = `
+                <div class="flex items-start space-x-2 step-item">
+                    <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2 py-1 rounded mt-1 step-number">1</span>
+                    <input type="text" class="step-input flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：通知家長...">
+                    <button type="button" class="text-gray-400 hover:text-red-500 mt-1 remove-step-btn" title="刪除此步驟"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+            closeModal();
+        });
+
+        function deleteTask(id) {
+            if(confirm('確定要刪除這筆紀錄嗎？')) {
+                tasks = tasks.filter(task => task.id !== id);
+                localStorage.setItem('myTasks', JSON.stringify(tasks));
+                renderCards();
+            }
+        }
+
+        // ================= 4. 分類標籤點擊邏輯 =================
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filterBtns.forEach(b => b.classList.remove('filter-active'));
+                this.classList.add('filter-active');
+                currentFilter = this.getAttribute('data-category');
+                renderCards();
+            });
+        });
+
+        // ================= 5. 控制表單與動態新增步驟的邏輯 =================
+        const addModal = document.getElementById('addModal');
+        const addBtnDesktop = document.getElementById('addBtnDesktop');
+        const addBtnMobile = document.getElementById('addBtnMobile');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        function openModal() { addModal.classList.remove('hidden'); }
+        function closeModal() { addModal.classList.add('hidden'); }
+
+        if(addBtnDesktop) addBtnDesktop.addEventListener('click', openModal);
+        if(addBtnMobile) addBtnMobile.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        addModal.addEventListener('click', function(e) { if (e.target === addModal) closeModal(); });
+
+        const addStepBtn = document.getElementById('addStepBtn');
+        const processStepsContainer = document.getElementById('processStepsContainer');
+
+        function updateStepNumbers() {
+            const steps = processStepsContainer.querySelectorAll('.step-number');
+            steps.forEach((step, index) => step.textContent = index + 1);
+        }
+
+        addStepBtn.addEventListener('click', function() {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'flex items-start space-x-2 step-item';
+            stepDiv.innerHTML = `
+                <span class="bg-indigo-100 text-indigo-800 text-xs font-semibold px-2 py-1 rounded mt-1 step-number"></span>
+                <input type="text" class="step-input flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="後續步驟...">
+                <button type="button" class="text-gray-400 hover:text-red-500 mt-1 remove-step-btn" title="刪除此步驟"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+            processStepsContainer.appendChild(stepDiv);
+            updateStepNumbers();
+        });
+
+        processStepsContainer.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.remove-step-btn');
+            if (removeBtn) {
+                if (processStepsContainer.querySelectorAll('.step-item').length > 1) {
+                    removeBtn.closest('.step-item').remove();
+                    updateStepNumbers();
+                } else {
+                    alert('至少需要保留一個處理步驟！');
+                }
+            }
+        });
+
+        // ================= ❗ 6. 匯出 CSV (Excel) 邏輯 =================
+        function exportToCSV() {
+            // 決定要匯出哪些資料（根據目前的篩選狀態）
+            let dataToExport = tasks;
+            if (currentFilter !== "全部") {
+                dataToExport = tasks.filter(task => task.category === currentFilter);
+            }
+
+            if (dataToExport.length === 0) {
+                alert('目前沒有資料可以匯出喔！');
+                return;
+            }
+
+            // CSV 的表頭 (第一行)
+            // 在開頭加入 \uFEFF 是為了確保 Excel 打開中文不會變成亂碼 (BOM)
+            let csvContent = "\uFEFF日期,分類,標題,備註,處理流程\n";
+
+            // 把每一筆資料轉換成 CSV 格式的字串
+            dataToExport.forEach(row => {
+                // 因為備註和流程裡面可能會有逗號或換行，所以我們用雙引號把它們包起來
+                let noteEscaped = `"${row.note.replace(/"/g, '""')}"`; // 處理原本就有的雙引號
+                let stepsEscaped = `"${row.steps.join(' \n')}"`; // 處理流程，用換行符號隔開
+
+                let rowString = `${row.date},${row.category},"${row.title}",${noteEscaped},${stepsEscaped}`;
+                csvContent += rowString + "\n";
+            });
+
+            // 建立一個 Blob 物件 (這是一個檔案物件)
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            
+            // 建立一個隱藏的下載連結，並模擬點擊
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            // 檔名加上當天日期
+            const today = new Date().toISOString().split('T')[0];
+            link.setAttribute("download", `生教業務紀錄_${today}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 綁定電腦版和手機版的匯出按鈕
+        const exportCsvBtnDesktop = document.getElementById('exportCsvBtnDesktop');
+        const exportCsvBtnMobile = document.getElementById('exportCsvBtnMobile');
+
+        if(exportCsvBtnDesktop) exportCsvBtnDesktop.addEventListener('click', exportToCSV);
+        if(exportCsvBtnMobile) exportCsvBtnMobile.addEventListener('click', exportToCSV);
+
+        // 網頁一載入，先畫出卡片
+        renderCards();
+
+    </script>
+</body>
+</html>
